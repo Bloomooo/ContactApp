@@ -1,32 +1,33 @@
-package com.ez.ggez
+package com.yanis.mechta
 
 import android.app.Activity
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
-import android.view.View
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
-import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import android.Manifest
 import android.content.Context
+import com.yanis.mechta.R
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import java.nio.file.attribute.AclEntry.Builder
 
+/**
+ * @author Yanis Mechta
+ * Activité principale de l'application.
+ */
 class MainActivity : AppCompatActivity(), ContactAdapter.ContactClickListener {
 
+    /**
+     * Méthode appelée lors de la création de l'activité.
+     */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -112,6 +113,11 @@ class MainActivity : AppCompatActivity(), ContactAdapter.ContactClickListener {
         }
     }
 
+    /**
+     * Enregistre la liste des contacts dans les préférences partagées.
+     *
+     * @param contacts La liste des contacts à enregistrer.
+     */
     private fun saveContacts(contacts: MutableList<Contact>) {
         val sharedPreferences = getSharedPreferences("shared_preferences", Context.MODE_PRIVATE)
         val editor = sharedPreferences.edit()
@@ -121,17 +127,35 @@ class MainActivity : AppCompatActivity(), ContactAdapter.ContactClickListener {
         editor.apply()
     }
 
+    /**
+     * Met à jour un contact dans la liste des contacts.
+     *
+     * @param contact Le contact à mettre à jour.
+     * @param position La position du contact dans la liste.
+     */
     private fun updateContact(contact: Contact, position: Int) {
         val contacts = getContacts().toMutableList()
         contacts[position] = contact
         saveContacts(contacts)
     }
+
+    /**
+     * Supprime un contact de la liste des contacts.
+     *
+     * @param contact Le contact à supprimer.
+     */
     private fun deleteContact(contact: Contact) {
         val contacts = getContacts().toMutableList()
         contacts.removeAll { it.getPhone() == contact.getPhone() }
         saveContacts(contacts)
     }
 
+
+    /**
+     * Obtient la liste des contacts à partir des préférences partagées.
+     *
+     * @return La liste des contacts.
+     */
     private fun getContacts(): MutableList<Contact> {
         val sharedPreferences = getSharedPreferences("shared_preferences", Context.MODE_PRIVATE)
         val gson = Gson()
@@ -140,6 +164,9 @@ class MainActivity : AppCompatActivity(), ContactAdapter.ContactClickListener {
         return gson.fromJson(json, type) ?: mutableListOf()
     }
 
+    /**
+     * Charge tous les contacts dans la vue de la liste des contacts.
+     */
     private fun loadContact() {
         val contacts = getContacts()
         val recyclerView = findViewById<RecyclerView>(R.id.contactRecyclerView)
@@ -147,6 +174,9 @@ class MainActivity : AppCompatActivity(), ContactAdapter.ContactClickListener {
         adapter?.updateData(contacts)
     }
 
+    /**
+     * Charge tous les contacts favoris dans la vue de la liste des contacts.
+     */
     private fun loadFavorites() {
         val favorites = getContacts().filter { it.isFavorite() == true }
         val recyclerView = findViewById<RecyclerView>(R.id.contactRecyclerView)
@@ -154,14 +184,27 @@ class MainActivity : AppCompatActivity(), ContactAdapter.ContactClickListener {
         adapter?.updateData(favorites.toMutableList())
     }
 
+
     override fun onResume() {
         super.onResume()
         loadContact()
     }
 
+    /**
+     * Méthode appelée lorsque la liste des contacts doit être mise à jour.
+     *
+     * @param contact Le contact mis à jour.
+     * @param position La position du contact dans la liste.
+     */
     override fun updateListContact(contact: Contact, position: Int) {
         updateContact(contact, position)
     }
+
+    /**
+     * Méthode appelée lorsqu'un contact est supprimé de la liste.
+     *
+     * @param contact Le contact supprimé.
+     */
     override fun onContactDeleted(contact: Contact) {
         deleteContact(contact)
     }

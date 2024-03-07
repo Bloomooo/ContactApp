@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.ez.ggez"
+    namespace = "com.yanis.mechta"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.ez.ggez"
+        applicationId = "com.yanis.mechta"
         minSdk = 26
         targetSdk = 34
         versionCode = 1

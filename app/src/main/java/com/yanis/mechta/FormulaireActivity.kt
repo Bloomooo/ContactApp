@@ -1,4 +1,4 @@
-package com.ez.ggez
+package com.yanis.mechta
 
 import android.app.Activity
 import android.app.AlertDialog
@@ -12,7 +12,6 @@ import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.provider.MediaStore
-import android.util.Log
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
@@ -26,28 +25,65 @@ import android.Manifest
 import android.os.Build
 import android.os.Environment
 import android.provider.Settings
+import com.yanis.mechta.R
 import com.google.android.material.snackbar.Snackbar
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
-import java.net.URI
 import java.util.Date
 import java.util.Locale
 
 /**
+ * @author Yanis Mechta
  * `MainActivity` est le point d'entrée de l'application, responsable de l'initialisation
  * de l'interface utilisateur et de la gestion des interactions utilisateur.
  */
 class FormulaireActivity : AppCompatActivity() {
+
+    /**
+     * Codes de requête pour les différentes opérations
+     */
     private val REQUEST_CAMERA_PERMISSION = 101
+
+    /**
+     * Codes de requête pour les différentes opérations
+     */
     private val REQUEST_STORAGE_PERMISSION = 102
+
+    /**
+     * Codes de requête pour les différentes opérations
+     */
     private val REQUEST_MANAGE_STORAGE_PERMISSION = 103
+
+    /**
+     * Codes de requête pour les différentes opérations
+     */
     private val REQUEST_IMAGE_CAPTURE = 1
+
+    /**
+     * Codes de requête pour les différentes opérations
+     */
     private val REQUEST_IMAGE_GALLERY = 2
+
+    /**
+     * URI de l'image sélectionnée
+     */
     private var imageUri: Uri? = null
+
+    /**
+     * Bitmap de l'image sélectionnée
+     */
     private var imageBitmap: Bitmap? = null
+
+    /**
+     * Indicateur pour savoir si l'image par défaut est utilisée
+     */
     private var useDefaultImage: Boolean = true
+
+    /**
+     * hemin de la photo capturée
+     */
     private var currentPhotoPath: String? = null
 
 
@@ -63,41 +99,22 @@ class FormulaireActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_formulaire)
+
         val firstNameExtra = intent.getStringExtra("firstName")
         val prenomEditText = findViewById<EditText>(R.id.editTextPrenom)
         prenomEditText.setText(firstNameExtra)
-        val button = findViewById<Button>(R.id.button)
+
         val dateListener = findViewById<EditText>(R.id.editTextDate)
-        checkAndRequestPermissions()
         dateListener.setOnClickListener {
-            val calendar = Calendar.getInstance()
-            val year = calendar.get(Calendar.YEAR)
-            val month = calendar.get(Calendar.MONTH)
-            val day = calendar.get(Calendar.DAY_OF_MONTH)
-
-            val datePickerDialog = DatePickerDialog(
-                this,
-                { _, selectedYear, selectedMonth, selectedDay ->
-                    val selectedDate = Calendar.getInstance()
-                    selectedDate.set(selectedYear, selectedMonth, selectedDay)
-                    val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-                    val formattedDate = sdf.format(selectedDate.time)
-                    dateListener.setText(formattedDate)
-                },
-                year,
-                month,
-                day
-            )
-
-            datePickerDialog.show()
+            showDatePickerDialog()
         }
 
         val img = findViewById<ImageView>(R.id.imageView)
-        val radioGroup = findViewById<RadioGroup>(R.id.radioGroup)
         img.setOnClickListener(){
             showImagePickerOptions()
         }
 
+        val button = findViewById<Button>(R.id.button)
         button.setOnClickListener {
             val name = findViewById<EditText>(R.id.editTextName).text.toString()
             val prenom = prenomEditText.text.toString()
@@ -114,6 +131,7 @@ class FormulaireActivity : AppCompatActivity() {
             } else {
                 ""
             }
+
             if (name.isEmpty() || prenom.isEmpty() || date.isEmpty() || tel.isEmpty() || mail.isEmpty() || !mail.contains("@") || !mail.contains(".")) {
                 var snack: Snackbar? = null
                 if(!mail.contains("@") || !mail.contains(".")){
@@ -123,18 +141,20 @@ class FormulaireActivity : AppCompatActivity() {
                 }
                 snack.show()
             } else {
-
                 val message =
                     "Sexe : $selectedSexe\n"+
-                    "Prénom : $prenom\n" +
+                            "Prénom : $prenom\n" +
                             "Nom : $name\n" +
                             "Date de naissance : $date\n" +
                             "Téléphone : $tel\n" +
                             "Email : $mail\n" +
                             "Favoris : $favoris"
+
+
                 val builder = AlertDialog.Builder(this)
                 builder.setMessage("Souhaitez-vous ajouter ce contact ?")
                     .setPositiveButton("Envoyer") { _, _ ->
+
                         val resultIntent = Intent()
                         resultIntent.putExtra("resultKey", message)
                         if (!useDefaultImage) {
@@ -146,7 +166,7 @@ class FormulaireActivity : AppCompatActivity() {
                         }
                         setResult(RESULT_OK, resultIntent)
                         returnImageToMainActivity()
-                        val toast = Toast.makeText(this, "Contact ajouter !", Toast.LENGTH_SHORT)
+                        val toast = Toast.makeText(this, "Contact ajouté !", Toast.LENGTH_SHORT)
                         toast.show()
                         finish()
                     }
@@ -158,7 +178,40 @@ class FormulaireActivity : AppCompatActivity() {
                 dialog.show()
             }
         }
+
+
+        checkAndRequestPermissions()
     }
+
+    /**
+     * Vérification et demande des permissions nécessaires
+     */
+    private fun showDatePickerDialog() {
+        val calendar = Calendar.getInstance()
+        val year = calendar.get(Calendar.YEAR)
+        val month = calendar.get(Calendar.MONTH)
+        val day = calendar.get(Calendar.DAY_OF_MONTH)
+
+        val datePickerDialog = DatePickerDialog(
+            this,
+            { _, selectedYear, selectedMonth, selectedDay ->
+                val selectedDate = Calendar.getInstance()
+                selectedDate.set(selectedYear, selectedMonth, selectedDay)
+                val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+                val formattedDate = sdf.format(selectedDate.time)
+                findViewById<EditText>(R.id.editTextDate).setText(formattedDate)
+            },
+            year,
+            month,
+            day
+        )
+
+        datePickerDialog.show()
+    }
+
+    /**
+     * Méthode pour afficher les options de sélection d'image
+     */
     private fun showImagePickerOptions() {
         val options = arrayOf<CharSequence>("Prendre une photo", "Choisir depuis la galerie", "Annuler")
         AlertDialog.Builder(this).setTitle("Ajouter une photo").setItems(options) { dialog, which ->
@@ -178,9 +231,19 @@ class FormulaireActivity : AppCompatActivity() {
         }.show()
     }
 
+    /**
+     * Méthode pour vérifier si une permission est accordée
+     */
     private fun hasPermission(permission: String) = ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
 
+    /**
+     * Méthode pour demander une permission
+     */
     private fun requestPermission(permission: String, requestCode: Int) = ActivityCompat.requestPermissions(this, arrayOf(permission), requestCode)
+
+    /**
+     * Méthode pour vérifier et demander les permissions nécessaires
+     */
     private fun checkAndRequestPermissions() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             if (!Environment.isExternalStorageManager()) {
@@ -203,6 +266,10 @@ class FormulaireActivity : AppCompatActivity() {
             }
         }
     }
+
+    /**
+     * Méthode pour capturer une photo avec l'appareil photo
+     */
     private fun dispatchTakePictureIntent() {
         if (hasPermission(Manifest.permission.CAMERA)) {
             val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
@@ -216,6 +283,9 @@ class FormulaireActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Méthode pour ouvrir la galerie pour sélectionner une image
+     */
     private fun dispatchGalleryIntent() {
         if (hasPermission(Manifest.permission.READ_EXTERNAL_STORAGE)) {
             val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
@@ -228,7 +298,9 @@ class FormulaireActivity : AppCompatActivity() {
         }
     }
 
-
+    /**
+     * Méthode appelée lorsqu'un résultat est retourné par une activité lancée pour un résultat
+     */
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (resultCode == Activity.RESULT_OK) {
@@ -236,7 +308,6 @@ class FormulaireActivity : AppCompatActivity() {
                 REQUEST_IMAGE_CAPTURE -> {
                     val imageBitmap = data?.extras?.get("data") as Bitmap?
                     imageBitmap?.let {
-                        // Enregistrer le bitmap dans un fichier
                         val imageFile = createImageFile()
                         imageFile?.let { file ->
                             try {
@@ -256,9 +327,7 @@ class FormulaireActivity : AppCompatActivity() {
 
                 }
                 REQUEST_IMAGE_GALLERY -> {
-                    // Utiliser l'URI sélectionné depuis la galerie
                     imageUri = data?.data
-                    // Réinitialiser le bitmap car nous utilisons une URI maintenant
                     imageBitmap = null
                     findViewById<ImageView>(R.id.imageView).setImageURI(imageUri)
                     useDefaultImage = false
@@ -266,20 +335,27 @@ class FormulaireActivity : AppCompatActivity() {
             }
         }
     }
+
+    /**
+     * Méthode pour créer un fichier image temporaire
+     */
     @Throws(IOException::class)
     private fun createImageFile(): File? {
         // Create an image file name
         val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
         val storageDir: File? = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
         return File.createTempFile(
-            "JPEG_${timeStamp}_", /* prefix */
-            ".jpg", /* suffix */
-            storageDir /* directory */
+            "JPEG_${timeStamp}_",
+            ".jpg",
+            storageDir
         ).apply {
-            // Save a file: path for use with ACTION_VIEW intents
             currentPhotoPath = absolutePath
         }
     }
+
+    /**
+     * Méthode appelée lorsque les résultats des demandes de permission sont retournés
+     */
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         when (requestCode) {
@@ -300,6 +376,9 @@ class FormulaireActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Méthode pour retourner l'image à l'activité principale
+     */
     private fun returnImageToMainActivity() {
         val resultIntent = Intent()
         imageBitmap?.let { bitmap ->

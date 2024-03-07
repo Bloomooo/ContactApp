@@ -1,4 +1,4 @@
-package com.ez.ggez
+package com.yanis.mechta
 
 import org.junit.Test
 

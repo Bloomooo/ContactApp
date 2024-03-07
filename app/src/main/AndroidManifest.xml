@@ -21,7 +21,6 @@
         android:theme="@style/Theme.GGEZ"
         tools:targetApi="31">
 
-
         <activity
             android:name=".FormulaireActivity"
             android:exported="true">

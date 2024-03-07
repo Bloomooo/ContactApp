@@ -1,4 +1,4 @@
-package com.ez.ggez
+package com.yanis.mechta
 
 import android.app.AlertDialog
 import android.content.Context
@@ -13,14 +13,37 @@ import android.widget.ImageView
 import android.widget.RadioGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.yanis.mechta.R
 
+/**
+ * @author Yanis Mechta
+ * `ContactAdapter` est un adaptateur pour afficher une liste de contacts dans un `RecyclerView`.
+ * Il est utilisé pour lier les données des contacts à leurs éléments de vue correspondants
+ * et gérer les interactions utilisateur avec ces éléments.
+ *
+ * @property contacts Liste des contacts à afficher dans le RecyclerView.
+ * @property listener Écouteur pour les événements de clic sur les contacts.
+ */
 class ContactAdapter(private var contacts: MutableList<Contact>, private val listener: ContactClickListener) : RecyclerView.Adapter<ContactAdapter.ContactViewHolder>() {
 
+    /**
+     * Crée une nouvelle instance de `ContactViewHolder` en inflatant la mise en page du contact à partir du XML.
+     *
+     * @param parent Le parent auquel la nouvelle vue est attachée.
+     * @param viewType Le type de vue.
+     * @return Une nouvelle instance de `ContactViewHolder`.
+     */
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ContactViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.contact_item, parent, false)
         return ContactViewHolder(view)
     }
 
+    /**
+     * Lie les données du contact à son élément de vue correspondant.
+     *
+     * @param holder Le ViewHolder à mettre à jour.
+     * @param position La position de l'élément dans la liste.
+     */
     override fun onBindViewHolder(holder: ContactViewHolder, position: Int) {
         val currentContact = contacts[position]
         holder.bind(currentContact)
@@ -47,6 +70,13 @@ class ContactAdapter(private var contacts: MutableList<Contact>, private val lis
 
 
 
+    /**
+     * Affiche un dialogue contenant les détails du contact.
+     *
+     * @param contact Le contact à afficher dans le dialogue.
+     * @param context Le contexte actuel.
+     * @param position La position du contact dans la liste.
+     */
     private fun showContactDialog(contact: Contact, context: Context?, position: Int) {
         val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_layout, null)
         val dialogImageView = dialogView.findViewById<ImageView>(R.id.dialog_image_view)
@@ -139,15 +169,29 @@ class ContactAdapter(private var contacts: MutableList<Contact>, private val lis
         builder.show()
     }
 
+    /**
+     * Retourne le nombre total d'éléments dans la liste de contacts.
+     *
+     * @return Le nombre total de contacts.
+     */
     override fun getItemCount(): Int {
         return contacts.size
     }
 
+    /**
+     * Met à jour les données de la liste de contacts.
+     *
+     * @param newContacts La nouvelle liste de contacts.
+     */
     fun updateData(newContacts: MutableList<Contact>) {
         contacts = newContacts
         notifyDataSetChanged()
     }
 
+    /**
+     * Classe interne représentant le ViewHolder pour chaque élément de contact dans le RecyclerView.
+     * @property itemView La vue de l'élément de contact.
+     */
     inner class ContactViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val nameTextView: TextView = itemView.findViewById(R.id.nameTextView)
         private val phoneTextView: TextView = itemView.findViewById(R.id.phoneTextView)
@@ -165,6 +209,13 @@ class ContactAdapter(private var contacts: MutableList<Contact>, private val lis
                 }
             }
         }
+
+        /**
+         * Met à jour le statut du favori pour un contact à une position donnée.
+         *
+         * @param position La position du contact dans la liste.
+         * @param isFavorite Le nouveau statut du favori.
+         */
         fun updateFavoriteStatus(position: Int, isFavorite: Boolean) {
             if (position != RecyclerView.NO_POSITION && position < contacts.size) {
                 contacts[position].setFavorite(isFavorite)
@@ -172,6 +223,11 @@ class ContactAdapter(private var contacts: MutableList<Contact>, private val lis
             }
         }
 
+        /**
+         * Lie les données du contact à l'élément de vue correspondant.
+         *
+         * @param contact Le contact à lier.
+         */
         fun bind(contact: Contact) {
             nameTextView.text = "${contact.getFirstName()} ${contact.getLastName()} "
             phoneTextView.text = contact.getPhone()
@@ -189,8 +245,24 @@ class ContactAdapter(private var contacts: MutableList<Contact>, private val lis
             }
         }
     }
+    /**
+     * Interface pour écouter les événements de clic sur les contacts.
+     */
     interface ContactClickListener {
+
+        /**
+         * Appelé lorsqu'un contact est mis à jour dans la liste.
+         *
+         * @param contact Le contact mis à jour.
+         * @param position La position du contact dans la liste.
+         */
         fun updateListContact(contact: Contact, position: Int)
+
+        /**
+         * Appelé lorsqu'un contact est supprimé de la liste.
+         *
+         * @param contact Le contact supprimé.
+         */
         fun onContactDeleted(contact: Contact)
     }
 }

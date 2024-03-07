@@ -23,6 +23,9 @@ import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import android.Manifest
+import android.os.Build
+import android.os.Environment
+import android.provider.Settings
 import com.google.android.material.snackbar.Snackbar
 import java.io.ByteArrayOutputStream
 import java.util.Locale
@@ -32,12 +35,16 @@ import java.util.Locale
  * de l'interface utilisateur et de la gestion des interactions utilisateur.
  */
 class FormulaireActivity : AppCompatActivity() {
-
+    private val REQUEST_CAMERA_PERMISSION = 101
+    private val REQUEST_STORAGE_PERMISSION = 102
+    private val REQUEST_MANAGE_STORAGE_PERMISSION = 103
     private val REQUEST_IMAGE_CAPTURE = 1
     private val REQUEST_IMAGE_GALLERY = 2
     private var imageUri: Uri? = null
     private var imageBitmap: Bitmap? = null
     private var useDefaultImage: Boolean = true
+
+
     /**
      * Appelée lorsque l'activité commence. C'est ici que la plupart des initialisations doivent avoir lieu :
      * appel de `setContentView(int)` pour gonfler l'interface utilisateur de l'activité, utilisation de `findViewById(int)`
@@ -55,7 +62,7 @@ class FormulaireActivity : AppCompatActivity() {
         prenomEditText.setText(firstNameExtra)
         val button = findViewById<Button>(R.id.button)
         val dateListener = findViewById<EditText>(R.id.editTextDate)
-
+        checkAndRequestPermissions()
         dateListener.setOnClickListener {
             val calendar = Calendar.getInstance()
             val year = calendar.get(Calendar.YEAR)
@@ -146,43 +153,77 @@ class FormulaireActivity : AppCompatActivity() {
             }
         }
     }
-
     private fun showImagePickerOptions() {
-        val items = arrayOf<CharSequence>("Prendre une photo", "Choisir depuis la galerie", "Annuler")
-        val builder = AlertDialog.Builder(this)
-        builder.setTitle("Ajouter une photo")
-        builder.setItems(items) { dialog, item ->
-            when (items[item]) {
-                "Prendre une photo" -> dispatchTakePictureIntent()
-                "Choisir depuis la galerie" -> {
-                    Log.d("Gallery", "Choisir depuis la galerie a été sélectionné")
-                    dispatchGalleryIntent()
+        val options = arrayOf<CharSequence>("Prendre une photo", "Choisir depuis la galerie", "Annuler")
+        AlertDialog.Builder(this).setTitle("Ajouter une photo").setItems(options) { dialog, which ->
+            when (which) {
+                0 -> if (hasPermission(Manifest.permission.CAMERA)) {
+                    dispatchTakePictureIntent()
+                } else {
+                    requestPermission(Manifest.permission.CAMERA, REQUEST_CAMERA_PERMISSION)
                 }
-                "Annuler" -> dialog.dismiss()
+                1 -> if (hasPermission(Manifest.permission.READ_EXTERNAL_STORAGE)) {
+                    dispatchGalleryIntent()
+                } else {
+                    requestPermission(Manifest.permission.READ_EXTERNAL_STORAGE, REQUEST_STORAGE_PERMISSION)
+                }
+                2 -> dialog.dismiss()
             }
-        }
-        builder.show()
+        }.show()
     }
 
+    private fun hasPermission(permission: String) = ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
+
+    private fun requestPermission(permission: String, requestCode: Int) = ActivityCompat.requestPermissions(this, arrayOf(permission), requestCode)
+    private fun checkAndRequestPermissions() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            if (!Environment.isExternalStorageManager()) {
+                val intent = Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION)
+                startActivityForResult(intent, REQUEST_MANAGE_STORAGE_PERMISSION)
+            }
+        } else {
+            val hasCameraPermission = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+            val hasReadStoragePermission = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
+
+            val permissionsToRequest = mutableListOf<String>()
+            if (!hasCameraPermission) {
+                permissionsToRequest.add(Manifest.permission.CAMERA)
+            }
+            if (!hasReadStoragePermission) {
+                permissionsToRequest.add(Manifest.permission.READ_EXTERNAL_STORAGE)
+            }
+            if (permissionsToRequest.isNotEmpty()) {
+                ActivityCompat.requestPermissions(this, permissionsToRequest.toTypedArray(), REQUEST_STORAGE_PERMISSION)
+            }
+        }
+    }
     private fun dispatchTakePictureIntent() {
-        val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-        takePictureIntent.resolveActivity(packageManager)?.also {
-            startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE)
+        if (hasPermission(Manifest.permission.CAMERA)) {
+            startActivityForResult(Intent(MediaStore.ACTION_IMAGE_CAPTURE), REQUEST_IMAGE_CAPTURE)
+        } else {
+            requestPermission(Manifest.permission.CAMERA, REQUEST_CAMERA_PERMISSION)
         }
     }
 
     private fun dispatchGalleryIntent() {
-        val galleryIntent = Intent(Intent.ACTION_GET_CONTENT)
-        galleryIntent.type = "image/*"
-        startActivityForResult(galleryIntent, REQUEST_IMAGE_GALLERY)
+        if (hasPermission(Manifest.permission.READ_EXTERNAL_STORAGE)) {
+            val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                addCategory(Intent.CATEGORY_OPENABLE)
+                type = "image/*"
+            }
+            startActivityForResult(intent, REQUEST_IMAGE_GALLERY)
+        } else {
+            requestPermission(Manifest.permission.READ_EXTERNAL_STORAGE, REQUEST_STORAGE_PERMISSION)
+        }
     }
+
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (resultCode == Activity.RESULT_OK) {
             when (requestCode) {
                 REQUEST_IMAGE_CAPTURE -> {
-                    imageBitmap = data?.extras?.get("data") as Bitmap
+                    imageBitmap = data?.extras?.get("data") as? Bitmap
                     findViewById<ImageView>(R.id.imageView).setImageBitmap(imageBitmap)
                     useDefaultImage = false
                 }
@@ -190,6 +231,26 @@ class FormulaireActivity : AppCompatActivity() {
                     imageUri = data?.data
                     findViewById<ImageView>(R.id.imageView).setImageURI(imageUri)
                     useDefaultImage = false
+                }
+            }
+        }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        when (requestCode) {
+            REQUEST_CAMERA_PERMISSION -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    dispatchTakePictureIntent()
+                } else {
+                    Toast.makeText(this, "Permission Camera refusée", Toast.LENGTH_SHORT).show()
+                }
+            }
+            REQUEST_STORAGE_PERMISSION -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    dispatchGalleryIntent()
+                } else {
+                    Toast.makeText(this, "Permission de lecture refusée", Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -206,10 +267,6 @@ class FormulaireActivity : AppCompatActivity() {
         }
         finish()
     }
-
-
-
-
 
 }
 

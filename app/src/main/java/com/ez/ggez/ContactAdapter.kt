@@ -38,7 +38,6 @@ class ContactAdapter(private var contacts: MutableList<Contact>, private val lis
                     notifyItemRemoved(position)
                     notifyItemRangeChanged(position, contacts.size - position)
                     listener.onContactDeleted(deletedContact)
-
                 }
                 .setNegativeButton("Non", null)
                 .show()

@@ -96,8 +96,17 @@ class MainActivity : AppCompatActivity(), ContactAdapter.ContactClickListener {
             intent.putExtra("firstName", "Yanis")
             mainActivityResultLauncher.launch(intent)
         }
+        val contactButton = findViewById<Button>(R.id.listecontact)
+        contactButton.setOnClickListener {
+            loadContact()
+        }
+
+        val favoriteButton = findViewById<Button>(R.id.listefavoris)
+        favoriteButton.setOnClickListener {
+            loadFavorites()
+        }
     }
-    
+
     private fun saveContacts(contacts: MutableList<Contact>) {
         val sharedPreferences = getSharedPreferences("shared_preferences", Context.MODE_PRIVATE)
         val editor = sharedPreferences.edit()
@@ -126,11 +135,18 @@ class MainActivity : AppCompatActivity(), ContactAdapter.ContactClickListener {
         return gson.fromJson(json, type) ?: mutableListOf()
     }
 
-    private fun loadContact(){
+    private fun loadContact() {
         val contacts = getContacts()
         val recyclerView = findViewById<RecyclerView>(R.id.contactRecyclerView)
         val adapter = recyclerView.adapter as? ContactAdapter
         adapter?.updateData(contacts)
+    }
+
+    private fun loadFavorites() {
+        val favorites = getContacts().filter { it.isFavorite() == true }
+        val recyclerView = findViewById<RecyclerView>(R.id.contactRecyclerView)
+        val adapter = recyclerView.adapter as? ContactAdapter
+        adapter?.updateData(favorites.toMutableList())
     }
 
     override fun onResume() {

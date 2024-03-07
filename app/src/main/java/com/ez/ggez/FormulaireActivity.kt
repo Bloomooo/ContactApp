@@ -223,9 +223,15 @@ class FormulaireActivity : AppCompatActivity() {
         if (resultCode == Activity.RESULT_OK) {
             when (requestCode) {
                 REQUEST_IMAGE_CAPTURE -> {
-                    imageBitmap = data?.extras?.get("data") as? Bitmap
-                    findViewById<ImageView>(R.id.imageView).setImageBitmap(imageBitmap)
-                    useDefaultImage = false
+                    if (data != null && data.extras != null && data.extras!!.containsKey("data")) {
+                        val bitmap = data.extras!!.get("data") as Bitmap
+                        findViewById<ImageView>(R.id.imageView).setImageBitmap(bitmap)
+                        useDefaultImage = false
+                    } else {
+
+                        Toast.makeText(this, "Erreur lors de la capture de l'image", Toast.LENGTH_SHORT).show()
+                    }
+
                 }
                 REQUEST_IMAGE_GALLERY -> {
                     imageUri = data?.data

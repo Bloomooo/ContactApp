@@ -13,13 +13,14 @@
 
     <Button
         android:id="@+id/button2"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
         android:text="+"
         android:textColor="@android:color/white"
-        android:background="@drawable/custom_button_background"
-        android:layout_alignParentEnd="true"
-        android:layout_alignParentTop="true" />
+        android:background="@drawable/round_button_background"
+        android:layout_marginBottom="10dp"
+        android:layout_centerHorizontal="true"
+        android:layout_above="@id/buttonContainer"/>
 
     <LinearLayout
         android:id="@+id/buttonContainer"

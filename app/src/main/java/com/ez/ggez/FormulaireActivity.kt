@@ -37,7 +37,7 @@ class FormulaireActivity : AppCompatActivity() {
     private val REQUEST_IMAGE_GALLERY = 2
     private var imageUri: Uri? = null
     private var imageBitmap: Bitmap? = null
-
+    private var useDefaultImage: Boolean = true
     /**
      * Appelée lorsque l'activité commence. C'est ici que la plupart des initialisations doivent avoir lieu :
      * appel de `setContentView(int)` pour gonfler l'interface utilisateur de l'activité, utilisation de `findViewById(int)`
@@ -119,13 +119,18 @@ class FormulaireActivity : AppCompatActivity() {
                             "Téléphone : $tel\n" +
                             "Email : $mail\n" +
                             "Favoris : $favoris"
-
                 val builder = AlertDialog.Builder(this)
                 builder.setMessage("Souhaitez-vous ajouter ce contact ?")
                     .setPositiveButton("Envoyer") { _, _ ->
                         val resultIntent = Intent()
                         resultIntent.putExtra("resultKey", message)
-                        resultIntent.putExtra("imageUri", imageUri.toString())
+                        if (!useDefaultImage) {
+                            imageUri?.let {
+                                resultIntent.putExtra("imageUri", it.toString())
+                            }
+                        } else {
+                            resultIntent.putExtra("useDefaultImage", true)
+                        }
                         setResult(RESULT_OK, resultIntent)
                         returnImageToMainActivity()
                         val toast = Toast.makeText(this, "Contact ajouter !", Toast.LENGTH_SHORT)
@@ -179,10 +184,12 @@ class FormulaireActivity : AppCompatActivity() {
                 REQUEST_IMAGE_CAPTURE -> {
                     imageBitmap = data?.extras?.get("data") as Bitmap
                     findViewById<ImageView>(R.id.imageView).setImageBitmap(imageBitmap)
+                    useDefaultImage = false
                 }
                 REQUEST_IMAGE_GALLERY -> {
                     imageUri = data?.data
                     findViewById<ImageView>(R.id.imageView).setImageURI(imageUri)
+                    useDefaultImage = false
                 }
             }
         }

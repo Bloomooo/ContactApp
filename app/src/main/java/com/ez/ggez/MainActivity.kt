@@ -45,16 +45,20 @@ class MainActivity : AppCompatActivity(), ContactAdapter.ContactClickListener {
                 if (result.resultCode == Activity.RESULT_OK) {
                     val data = result.data?.getStringExtra("resultKey")
                     val imageUriString = result.data?.getStringExtra("imageUri")
-                    val imageUri = Uri.parse(imageUriString)
-                    imageUri?.let { uri ->
-                        contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    val bitmapimage = if (imageUriString != null) {
+                        val imageUri = Uri.parse(imageUriString)
+                        contentResolver.takePersistableUriPermission(imageUri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        val inputStream = contentResolver.openInputStream(imageUri)
+                        BitmapFactory.decodeStream(inputStream).also {
+                            inputStream?.close()
+                        }
+                    } else {
+                        BitmapFactory.decodeResource(resources, R.drawable.ez)
                     }
+
                     val dialogView = layoutInflater.inflate(R.layout.dialog_layout, null)
                     val dialogImageView = dialogView.findViewById<ImageView>(R.id.dialog_image_view)
-                    val inputStream = contentResolver.openInputStream(imageUri)
-                    val bitmap = BitmapFactory.decodeStream(inputStream)
-                    inputStream?.close()
-                    dialogImageView.setImageBitmap(bitmap)
+                    dialogImageView.setImageBitmap(bitmapimage)
 
 
                     val sexe = data?.split("\n")?.get(0)?.split(":")?.get(1)?.trim()

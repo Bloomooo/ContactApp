@@ -31,6 +31,14 @@ class MainActivity : AppCompatActivity(), ContactAdapter.ContactClickListener {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        var recyclerView = findViewById<RecyclerView>(R.id.contactRecyclerView)
+        recyclerView.layoutManager = LinearLayoutManager(this)
+
+        var adapter = ContactAdapter(mutableListOf(), this)
+        recyclerView.adapter = adapter
+
+
+        loadContact()
         val button = findViewById<Button>(R.id.button2)
         val mainActivityResultLauncher =
             registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -89,6 +97,7 @@ class MainActivity : AppCompatActivity(), ContactAdapter.ContactClickListener {
             mainActivityResultLauncher.launch(intent)
         }
     }
+    
     private fun saveContacts(contacts: MutableList<Contact>) {
         val sharedPreferences = getSharedPreferences("shared_preferences", Context.MODE_PRIVATE)
         val editor = sharedPreferences.edit()
@@ -103,6 +112,12 @@ class MainActivity : AppCompatActivity(), ContactAdapter.ContactClickListener {
         contacts[position] = contact
         saveContacts(contacts)
     }
+    private fun deleteContact(contact: Contact) {
+        val contacts = getContacts().toMutableList()
+        contacts.removeAll { it.getPhone() == contact.getPhone() }
+        saveContacts(contacts)
+    }
+
     private fun getContacts(): MutableList<Contact> {
         val sharedPreferences = getSharedPreferences("shared_preferences", Context.MODE_PRIVATE)
         val gson = Gson()
@@ -114,8 +129,8 @@ class MainActivity : AppCompatActivity(), ContactAdapter.ContactClickListener {
     private fun loadContact(){
         val contacts = getContacts()
         val recyclerView = findViewById<RecyclerView>(R.id.contactRecyclerView)
-        recyclerView.layoutManager = LinearLayoutManager(this)
-        recyclerView.adapter = ContactAdapter(contacts, this)
+        val adapter = recyclerView.adapter as? ContactAdapter
+        adapter?.updateData(contacts)
     }
 
     override fun onResume() {
@@ -125,6 +140,9 @@ class MainActivity : AppCompatActivity(), ContactAdapter.ContactClickListener {
 
     override fun updateListContact(contact: Contact, position: Int) {
         updateContact(contact, position)
+    }
+    override fun onContactDeleted(contact: Contact) {
+        deleteContact(contact)
     }
 
 

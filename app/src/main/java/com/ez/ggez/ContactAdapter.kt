@@ -28,7 +28,25 @@ class ContactAdapter(private var contacts: MutableList<Contact>, private val lis
         holder.itemView.setOnClickListener {
             showContactDialog(currentContact, holder.itemView.context, position)
         }
+
+        holder.itemView.setOnLongClickListener {
+            AlertDialog.Builder(holder.itemView.context)
+                .setTitle("Supprimer le contact")
+                .setMessage("Êtes-vous sûr de vouloir supprimer ce contact ?")
+                .setPositiveButton("Oui") { dialog, which ->
+                    val deletedContact = contacts.removeAt(position)
+                    notifyItemRemoved(position)
+                    notifyItemRangeChanged(position, contacts.size - position)
+                    listener.onContactDeleted(deletedContact)
+
+                }
+                .setNegativeButton("Non", null)
+                .show()
+            true
+        }
     }
+
+
 
     private fun showContactDialog(contact: Contact, context: Context?, position: Int) {
         val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_layout, null)
@@ -71,7 +89,6 @@ class ContactAdapter(private var contacts: MutableList<Contact>, private val lis
             val dialogImageViewModify = modifyView.findViewById<ImageView>(R.id.dialog_image_view_modify)
 
             dialogNameModify.setText("${contact.getFirstName()} ${contact.getLastName()}")
-            // Set the selected sex based on the contact's sex
             when (contact.getSex()) {
                 "Homme" -> dialogSexeModify.check(R.id.radioButton4)
                 "Femme" -> dialogSexeModify.check(R.id.radioButton3)
@@ -175,5 +192,6 @@ class ContactAdapter(private var contacts: MutableList<Contact>, private val lis
     }
     interface ContactClickListener {
         fun updateListContact(contact: Contact, position: Int)
+        fun onContactDeleted(contact: Contact)
     }
 }

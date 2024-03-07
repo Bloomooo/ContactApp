@@ -29,7 +29,7 @@
         android:layout_alignParentBottom="true">
 
         <Button
-            android:id="@+id/ggez"
+            android:id="@+id/listecontact"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
@@ -39,7 +39,7 @@
             style="@style/Widget.AppCompat.Button.Borderless" />
 
         <Button
-            android:id="@+id/ez"
+            android:id="@+id/listefavoris"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"

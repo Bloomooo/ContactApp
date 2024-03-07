@@ -28,6 +28,11 @@ import android.os.Environment
 import android.provider.Settings
 import com.google.android.material.snackbar.Snackbar
 import java.io.ByteArrayOutputStream
+import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
+import java.net.URI
+import java.util.Date
 import java.util.Locale
 
 /**
@@ -43,6 +48,7 @@ class FormulaireActivity : AppCompatActivity() {
     private var imageUri: Uri? = null
     private var imageBitmap: Bitmap? = null
     private var useDefaultImage: Boolean = true
+    private var currentPhotoPath: String? = null
 
 
     /**
@@ -199,7 +205,12 @@ class FormulaireActivity : AppCompatActivity() {
     }
     private fun dispatchTakePictureIntent() {
         if (hasPermission(Manifest.permission.CAMERA)) {
-            startActivityForResult(Intent(MediaStore.ACTION_IMAGE_CAPTURE), REQUEST_IMAGE_CAPTURE)
+            val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+            if (takePictureIntent.resolveActivity(packageManager) != null) {
+                startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE)
+            } else {
+                Toast.makeText(this, "Aucune application pour gérer la capture de photo", Toast.LENGTH_SHORT).show()
+            }
         } else {
             requestPermission(Manifest.permission.CAMERA, REQUEST_CAMERA_PERMISSION)
         }
@@ -223,25 +234,52 @@ class FormulaireActivity : AppCompatActivity() {
         if (resultCode == Activity.RESULT_OK) {
             when (requestCode) {
                 REQUEST_IMAGE_CAPTURE -> {
-                    if (data != null && data.extras != null && data.extras!!.containsKey("data")) {
-                        val bitmap = data.extras!!.get("data") as Bitmap
-                        findViewById<ImageView>(R.id.imageView).setImageBitmap(bitmap)
-                        useDefaultImage = false
-                    } else {
-
+                    val imageBitmap = data?.extras?.get("data") as Bitmap?
+                    imageBitmap?.let {
+                        // Enregistrer le bitmap dans un fichier
+                        val imageFile = createImageFile()
+                        imageFile?.let { file ->
+                            try {
+                                val fileOutputStream = FileOutputStream(file)
+                                it.compress(Bitmap.CompressFormat.PNG, 100, fileOutputStream)
+                                fileOutputStream.close()
+                                imageUri = Uri.parse(file.absolutePath)
+                                findViewById<ImageView>(R.id.imageView).setImageURI(imageUri)
+                            } catch (e: IOException) {
+                                e.printStackTrace()
+                                Toast.makeText(this, "Erreur lors de l'enregistrement de l'image", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    } ?: run {
                         Toast.makeText(this, "Erreur lors de la capture de l'image", Toast.LENGTH_SHORT).show()
                     }
 
                 }
                 REQUEST_IMAGE_GALLERY -> {
+                    // Utiliser l'URI sélectionné depuis la galerie
                     imageUri = data?.data
+                    // Réinitialiser le bitmap car nous utilisons une URI maintenant
+                    imageBitmap = null
                     findViewById<ImageView>(R.id.imageView).setImageURI(imageUri)
                     useDefaultImage = false
                 }
             }
         }
     }
-
+    @Throws(IOException::class)
+    private fun createImageFile(): File? {
+        // Create an image file name
+        val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+        val storageDir: File? = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+        return File.createTempFile(
+            "JPEG_${timeStamp}_", /* prefix */
+            ".jpg", /* suffix */
+            storageDir /* directory */
+        ).apply {
+            // Save a file: path for use with ACTION_VIEW intents
+            currentPhotoPath = absolutePath
+        }
+    }
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         when (requestCode) {
